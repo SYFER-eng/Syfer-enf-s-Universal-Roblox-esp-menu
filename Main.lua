@@ -1,5 +1,5 @@
 -- Load the ESP Library
-local ESPLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/SYFER-eng/Syfer-enf-s-Universal-Roblox-esp-menu/refs/heads/main/Lib/Lib.lua?token=GHSAT0AAAAAADA65PBJG4SPGANGJ37HKI5CZ7HV6HA'))()
+local ESPLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/SYFER-eng/Syfer-enf-s-Universal-Roblox-esp-menu/refs/heads/main/Lib/Lib.lua'))()
 
 -- Check if library loaded successfully
 if not ESPLib then
