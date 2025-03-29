@@ -1,157 +1,124 @@
--- Universal Bone ESP
--- Made by Sourcegraph Cody
+-- Clean Universal Bone ESP Script for Roblox
+-- No UI, no boxes, just bone lines
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Camera = workspace.CurrentCamera
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- Create ESP container
-local ESPContainer = Instance.new("Folder")
-ESPContainer.Name = "BoneESP"
-ESPContainer.Parent = CoreGui
-
--- Bone ESP Settings
-local Settings = {
-    BoneColor = Color3.fromRGB(255, 0, 0),  -- Red bones
-    BoneTransparency = 0.2,                 -- More visible (lower transparency)
-    BoneThickness = 3                       -- Thicker bones
+-- ESP Settings
+local ESP = {
+    Enabled = true,
+    Color = Color3.fromRGB(255, 0, 0), -- Red
+    Thickness = 2,
 }
 
--- Bone connections (R6 and R15 compatible)
-local BoneConnections = {
-    -- Head to Torso
+-- Create a table to store all drawings
+local drawings = {}
+
+-- Function to create a new drawing
+local function CreateDrawing(id)
+    if drawings[id] then
+        return drawings[id]
+    end
+    
+    local drawing = Drawing.new("Line")
+    drawing.Visible = false
+    drawing.Thickness = ESP.Thickness
+    drawing.Color = ESP.Color
+    drawing.Transparency = 1
+    drawings[id] = drawing
+    return drawing
+end
+
+-- Simple bone connections for R15
+local boneConnections = {
+    -- Torso
     {"Head", "UpperTorso"},
-    {"Head", "Torso"},
-    
-    -- Torso to limbs (R15)
     {"UpperTorso", "LowerTorso"},
-    {"UpperTorso", "RightUpperArm"},
+    
+    -- Left Arm
     {"UpperTorso", "LeftUpperArm"},
-    {"LowerTorso", "RightUpperLeg"},
-    {"LowerTorso", "LeftUpperLeg"},
-    
-    -- Torso to limbs (R6)
-    {"Torso", "Right Arm"},
-    {"Torso", "Left Arm"},
-    {"Torso", "Right Leg"},
-    {"Torso", "Left Leg"},
-    
-    -- Arms (R15)
-    {"RightUpperArm", "RightLowerArm"},
-    {"RightLowerArm", "RightHand"},
     {"LeftUpperArm", "LeftLowerArm"},
     {"LeftLowerArm", "LeftHand"},
     
-    -- Legs (R15)
+    -- Right Arm
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"RightLowerArm", "RightHand"},
+    
+    -- Left Leg
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LeftLowerLeg", "LeftFoot"},
+    
+    -- Right Leg
+    {"LowerTorso", "RightUpperLeg"},
     {"RightUpperLeg", "RightLowerLeg"},
     {"RightLowerLeg", "RightFoot"},
-    {"LeftUpperLeg", "LeftLowerLeg"},
-    {"LeftLowerLeg", "LeftFoot"}
 }
 
--- Create bone ESP for a player
-local function CreateBoneESP(player)
-    local ESP = Instance.new("Folder")
-    ESP.Name = player.Name
-    ESP.Parent = ESPContainer
-    
-    -- Create lines for each bone connection
-    for i, _ in ipairs(BoneConnections) do
-        local Line = Instance.new("LineHandleAdornment")
-        Line.Name = "Bone" .. i
-        Line.Thickness = Settings.BoneThickness
-        Line.Color3 = Settings.BoneColor
-        Line.AlwaysOnTop = true
-        Line.ZIndex = 10
-        Line.Transparency = Settings.BoneTransparency
-        Line.Parent = ESP
+-- R6 connections
+local r6Connections = {
+    {"Head", "Torso"},
+    {"Torso", "Left Arm"},
+    {"Torso", "Right Arm"},
+    {"Torso", "Left Leg"},
+    {"Torso", "Right Leg"},
+}
+
+-- Main ESP function
+local function UpdateESP()
+    -- Hide all drawings first
+    for _, drawing in pairs(drawings) do
+        drawing.Visible = false
     end
     
-    return ESP
-end
-
--- Update bone ESP for a player
-local function UpdateBoneESP(player, esp)
-    if not player.Character then return end
-    
-    local character = player.Character
-    
-    -- Update each bone line
-    for i, connection in ipairs(BoneConnections) do
-        local part1 = character:FindFirstChild(connection[1])
-        local part2 = character:FindFirstChild(connection[2])
-        
-        local line = esp:FindFirstChild("Bone" .. i)
-        if line and part1 and part2 then
-            line.Adornee = workspace
-            line.Length = (part1.Position - part2.Position).Magnitude
-            
-            -- Calculate the midpoint between the two parts
-            local midPoint = (part1.Position + part2.Position) / 2
-            
-            -- Create a CFrame that looks from part1 to part2
-            local lookAt = CFrame.lookAt(part1.Position, part2.Position)
-            
-            -- Position the line at the midpoint, oriented along the direction from part1 to part2
-            line.CFrame = CFrame.new(midPoint) * lookAt * CFrame.new(0, 0, -line.Length/2)
-            line.Visible = true
-        else
-            if line then
-                line.Visible = false
-            end
-        end
-    end
-end
-
--- Remove bone ESP for a player
-local function RemoveBoneESP(player)
-    local esp = ESPContainer:FindFirstChild(player.Name)
-    if esp then
-        esp:Destroy()
-    end
-end
-
--- Create bone ESP for all players
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        CreateBoneESP(player)
-    end
-end
-
--- Handle player joining
-Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        CreateBoneESP(player)
-    end
-end)
-
--- Handle player leaving
-Players.PlayerRemoving:Connect(function(player)
-    RemoveBoneESP(player)
-end)
-
--- Update bone ESP
-RunService.RenderStepped:Connect(function()
-    for _, player in ipairs(Players:GetPlayers()) do
+    -- Loop through all players
+    for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
-            local esp = ESPContainer:FindFirstChild(player.Name)
-            if not esp then
-                esp = CreateBoneESP(player)
+            local character = player.Character
+            if character and character:FindFirstChildOfClass("Humanoid") then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid.Health > 0 then
+                    -- Determine if R15 or R6
+                    local connections = boneConnections
+                    if character:FindFirstChild("Torso") then
+                        connections = r6Connections
+                    end
+                    
+                    -- Draw bones
+                    for i, bone in ipairs(connections) do
+                        local part1 = character:FindFirstChild(bone[1])
+                        local part2 = character:FindFirstChild(bone[2])
+                        
+                        if part1 and part2 then
+                            local pos1, vis1 = Camera:WorldToViewportPoint(part1.Position)
+                            local pos2, vis2 = Camera:WorldToViewportPoint(part2.Position)
+                            
+                            if vis1 and vis2 then
+                                local drawingId = player.Name .. i
+                                local line = CreateDrawing(drawingId)
+                                
+                                line.From = Vector2.new(pos1.X, pos1.Y)
+                                line.To = Vector2.new(pos2.X, pos2.Y)
+                                line.Visible = true
+                            end
+                        end
+                    end
+                end
             end
-            UpdateBoneESP(player, esp)
         end
     end
-end)
-
--- Notification that bone ESP is active
-local function notify(text)
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Bone ESP",
-        Text = text,
-        Duration = 3
-    })
 end
 
-notify("Bone ESP is now active!")
+-- Connect the ESP function to RenderStepped
+RunService:BindToRenderStep("CleanESP", Enum.RenderPriority.Camera.Value, UpdateESP)
+
+-- Keep the script running and always enabled
+spawn(function()
+    while true do
+        wait(1)
+        ESP.Enabled = true
+    end
+end)
