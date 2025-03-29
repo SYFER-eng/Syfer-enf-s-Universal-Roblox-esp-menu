@@ -1,20 +1,5 @@
---[[
-    Advanced Roblox ESP Script with Multi-Tab UI
-    Uses RobloxESPLib for all functionality
-    
-    Features:
-    - Universal ESP for all players in game
-    - Modern UI with smooth animations
-    - Multiple tabs for different settings
-    - Keyboard shortcuts: 
-      * Insert: Show/Hide UI
-      * End: Unload script
-    
-    Author: Advanced Lua Script Generator
-]]
-
 -- Load the ESP Library
-local ESPLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/user/repo/main/RobloxESPLib.lua'))()
+local ESPLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/SYFER-eng/Syfer-enf-s-Universal-Roblox-esp-menu/refs/heads/main/Lib/Lib.lua?token=GHSAT0AAAAAADA65PBJG4SPGANGJ37HKI5CZ7HV6HA'))()
 
 -- Check if library loaded successfully
 if not ESPLib then
